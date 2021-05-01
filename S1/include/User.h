@@ -13,12 +13,14 @@
 #include <vector>
 #include <utility>
 
+#include "Trade.h"
+
 class User
 {
 private:
     std::string name;
     std::string password;
-    int balance;
+    double balance;
 
 public:
     enum Type
@@ -26,35 +28,39 @@ public:
         consumer,
         merchant,
     };
-    virtual int getUserType() = 0; // 获得用户类型
+    virtual Type getUserType() = 0; // 获得用户类型
 
-    int getBalance();        // 获得余额
-    void setBalance() const; // 设置余额
+    double getBalance() const { return balance; } // 获得余额
+    void setBalance(double b) { balance = b; }    // 设置余额
 
-    std::string getName() const;             // 获得用户名
-    std::string getPassword() const;         // 获得密码
-    void setPassword(const std::string &pw); // 设置密码
+    std::string getName() const { return name; }               // 获得用户名
+    void setName(const std::string &nm) { name = nm; }         // 设置用户名
+    std::string getPassword() const { return password; }       // 获得密码
+    void setPassword(const std::string &pw) { password = pw; } // 设置密码
 
-    User(const std::string &n, const std::string &pw); // 构造函数
+    User(const std::string &n, const std::string &pw, const double b); // 构造函数
 };
 
 class Consumer : public User
 {
 private:
-    std::vector<std::pair<int, int>> cart;
-
 public:
-    virtual int getUserType() override { return Type::consumer; }
-    int addCart(int comId, int num); // 加入购物车
-    bool settle();                   // 结算
+    std::vector<std::pair<std::string, int>> cart;
+
+    virtual Type getUserType() override { return Type::consumer; }
+    std::vector<std::pair<std::string, int>> getCart() const { return cart; }
+    bool addCart(std::string comId, int num); // 加入购物车
+
+    Consumer(const std::string &n, const std::string &pw, const double b);
 };
 
 class Merchant : public User
 {
 private:
 public:
-    virtual int getUserType() override { return Type::merchant; }
+    virtual Type getUserType() override { return Type::merchant; }
 
+    Merchant(const std::string &n, const std::string &pw, const double b);
 };
 
 #endif
