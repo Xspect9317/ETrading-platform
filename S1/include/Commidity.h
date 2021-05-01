@@ -28,11 +28,15 @@ public:
     void setQuantity(int q) { quantity = q; }
 
     std::string getComType() const { return comType; }
-    void setComType(std::string) {}
+    void setComType(const std::string &t) { comType = t; }
 
     std::string getName() const { return name; }
+    void setName(const std::string &n) { name = n; }
 
     Commdity(double pr, double pe, int q, std::string ct, std::string n);
+
+    bool buy(int count);
+    bool isType(const std::string& t);
 };
 
 #endif
