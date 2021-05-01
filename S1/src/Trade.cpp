@@ -170,7 +170,7 @@ bool Trade::delUser(const std::string &username)
     return false;
 }
 
-bool Trade::getUserInfo(const std::string &username)
+bool Trade::getUserInfo(const std::string &username) const
 {
     if (haveUser(username))
     {
@@ -201,7 +201,7 @@ void Trade::listComm() const
     }
 }
 
-void Trade::listComm(const std::string &name, const std::string &comType = "", const std::string &uname = "")
+void Trade::listComm(const std::string &name, const std::string &comType = "", const std::string &uname = "") const
 {
     for (const auto &it : commList)
     {
@@ -313,7 +313,7 @@ bool Trade::buy(const std::string &uname)
     return false;
 }
 
-int Trade::getQuantity(const std::string &name)
+int Trade::getQuantity(const std::string &name) const
 {
     int ret = -1;
     for (auto it = commList.begin(); it != commList.end(); it++)
@@ -327,7 +327,7 @@ int Trade::getQuantity(const std::string &name)
     return ret;
 }
 
-double Trade::getPrice(const std::string &name)
+double Trade::getPrice(const std::string &name) const
 {
     int ret = -1;
     for (auto it = commList.begin(); it != commList.end(); it++)
@@ -400,4 +400,42 @@ Trade::~Trade()
     {
         delete uit;
     }
+}
+
+double Trade::getbal(const std::string &uname) const
+{
+    for (auto uit : userList)
+    {
+        if (uname.compare(uit->getName()) == 0)
+        {
+            return uit->getBalance();
+        }
+    }
+    return -1;
+}
+
+bool Trade::setbal(const std::string &uname, double b)
+{
+    for (auto uit : userList)
+    {
+        if (uname.compare(uit->getName()) == 0)
+        {
+            uit->setBalance(b);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Trade::addbal(const std::string &uname, double b)
+{
+    for (auto uit : userList)
+    {
+        if (uname.compare(uit->getName()) == 0)
+        {
+            uit->setBalance(b + uit->getBalance());
+            return true;
+        }
+    }
+    return false;
 }

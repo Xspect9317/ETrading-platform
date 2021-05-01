@@ -40,18 +40,21 @@ public:
     bool checkPassword(const std::string &username, const std::string &password) const;
     bool addUser(const std::string &username, const std::string &password, int type);
     bool delUser(const std::string &username);
-    bool getUserInfo(const std::string &username);
+    bool getUserInfo(const std::string &username) const;
+    double getbal(const std::string& uname) const;
+    bool setbal(const std::string& uname,double b);
+    bool addbal(const std::string& uname,double b);
 
     // 商品管理
     bool haveComm(const std::string &name) const;
     void listComm() const;
-    void listComm(const std::string &name, const std::string &comType = "", const std::string &uname = "");
+    void listComm(const std::string &name, const std::string &comType = "", const std::string &uname = "") const;
     bool addComm(const std::string &name, const std::string &uname, const std::string &comType, double price);
     bool delComm(const std::string &name, const std::string &uname);
     bool changeQuantity(const std::string &name, const std::string &uname, int q);
-    int getQuantity(const std::string &name);
+    int getQuantity(const std::string &name) const;
     bool setPrice(const std::string &name, const std::string &uname, double p);
-    double getPrice(const std::string &name);
+    double getPrice(const std::string &name) const;
     bool setPercent(const std::string &name, const std::string &uname, double p);
 
     // 购物
