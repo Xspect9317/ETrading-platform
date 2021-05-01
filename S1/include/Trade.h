@@ -48,7 +48,7 @@ public:
     // 商品管理
     bool haveComm(const std::string &name) const;
     void listComm() const;
-    void listComm(const std::string &name, const std::string &comType = "", const std::string &uname = "") const;
+    void listComm(const std::string &name, const std::string &comType = "*", const std::string &uname = "") const;
     bool addComm(const std::string &name, const std::string &uname, const std::string &comType, double price);
     bool delComm(const std::string &name, const std::string &uname);
     bool changeQuantity(const std::string &name, const std::string &uname, int q);

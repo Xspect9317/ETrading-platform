@@ -201,11 +201,11 @@ void Trade::listComm() const
     }
 }
 
-void Trade::listComm(const std::string &name, const std::string &comType = "", const std::string &uname = "") const
+void Trade::listComm(const std::string &name, const std::string &comType = "*", const std::string &uname = "") const
 {
     for (const auto &it : commList)
     {
-        if ((name == "" || it.getName().find(name) != -1) && (comType == "" || comType.compare(it.getComType()) == 0) && (uname == "" || uname.compare(it.getOwner()) == 0))
+        if ((name == "*" || it.getName().find(name) != -1) && (comType == "*" || comType.compare(it.getComType()) == 0) && (uname == "" || uname.compare(it.getOwner()) == 0))
         {
             std::cout << "Name : " << it.getName() << " "
                       << "Price : " << it.getPrice() << " "

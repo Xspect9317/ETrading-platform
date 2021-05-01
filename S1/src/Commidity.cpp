@@ -4,9 +4,10 @@ Commdity::Commdity(
     double pr,
     double pe,
     int q,
-    std::string ct,
-    std::string n)
-    : price(pr), percent(pe), quantity(q), comType(ct), name(n)
+    const std::string& ct,
+    const std::string& n,
+    const std::string& own)
+    : price(pr), percent(pe), quantity(q), comType(ct), name(n), owner(own)
 {
 }
 
