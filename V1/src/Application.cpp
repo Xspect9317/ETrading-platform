@@ -26,6 +26,7 @@ int Application::exec()
     strMap["recharge"] = strValue::recharge;
     strMap["ls"] = strValue::ls;
     strMap["lsall"] = strValue::lsall;
+    strMap["lsu"] = strValue::lsu;
     strMap["addcomm"] = strValue::addcomm;
     strMap["chquantity"] = strValue::chquantity;
     strMap["chpr"] = strValue::chpr;
@@ -56,6 +57,7 @@ int Application::exec()
                               //   << "recharge <number> : recharge\n"
                               << "ls <commdity name> [commdity type] : list commdity\n"
                               << "lsall : list all commdity\n"
+                              << "lsu <username> : list a user info\n"
                               << "addcomm <commdity name> <commdity type> <price>: add a commdity\n"
                               << "chquantity <commdity name> <number> : change quantity\n"
                               << "chpr <commdity name> <number> : change price\n"
@@ -212,7 +214,7 @@ int Application::exec()
                         std::cout << "NOT Logged\n";
                         break;
                     }
-                    
+
                     if (argv.size() < 3)
                     {
                         std::cout << "INVALID Format\n";
@@ -227,6 +229,18 @@ int Application::exec()
                     }
                 }
                 break;
+
+                case lsu:
+                    if (argv.size() < 2)
+                    {
+                        std::cout << "INVALID format\n";
+                        break;
+                    }
+                    if (!trade->getUserInfo(argv[1]))
+                    {
+                        std::cout << "Failed\n";
+                    }
+                    break;
 
                 case quit:
                     trade->saveCommFile();

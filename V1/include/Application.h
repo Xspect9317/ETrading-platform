@@ -35,6 +35,7 @@ public:
         recharge,
         ls,
         lsall,
+        lsu,
         addcomm,
         chquantity,
         chpr,

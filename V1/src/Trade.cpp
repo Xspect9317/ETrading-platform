@@ -186,23 +186,27 @@ bool Trade::delUser(const std::string &username)
 
 bool Trade::getUserInfo(const std::string &username) const
 {
-    if (haveUser(username))
+    bool ret = false;
+    if (username == "*" || haveUser(username))
     {
         for (auto it : userList)
         {
-            if (username.compare(it->getName()) == 0)
+            if (username == "*" || username.compare(it->getName()) == 0)
             {
                 // 输出用户信息
 
-                std::cout << "User Info [ " << username << " ]" << std::endl;
+                std::cout << "User Info [ " << it->getName() << " ]" << std::endl;
                 std::cout << "Type : " << (int)it->getUserType() << std::endl;
                 std::cout << "Balance : " << it->getBalance() << std::endl;
-                return true;
+                ret = true;
             }
         }
     }
-    std::cout << "CANNOT find user : " << username << std::endl;
-    return false;
+    if(!ret)
+    {
+        std::cout << "CANNOT find user : " << username << std::endl;
+    }
+    return ret;
 }
 
 void Trade::listComm() const
