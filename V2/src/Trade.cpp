@@ -339,6 +339,11 @@ bool Trade::buy(const std::string &uname)
                 }
                 return false;
             }
+            std::cout << "Buy : \n";
+            for (auto cit : cart)
+            {
+                std::cout << cit.first << " : " << cit.second << std::endl;
+            }
             uit->setBalance(uit->getBalance() - sum);
             clearCart(uit->getName());
             return true;
