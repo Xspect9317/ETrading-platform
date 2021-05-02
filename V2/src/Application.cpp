@@ -144,6 +144,11 @@ int Application::exec()
                         std::cout << "INVALID Format\n";
                         break;
                     }
+                    if (isLogged())
+                    {
+                        std::cout << "Failed\n";
+                        break;
+                    }
                     if (trade->checkPassword(argv[1], argv[2]))
                     {
                         uname = argv[1];
@@ -155,6 +160,10 @@ int Application::exec()
                     {
                         std::cout << "Failed\n";
                     }
+                    break;
+
+                case logout:
+                    logged = false;
                     break;
 
                 case ls:
@@ -310,7 +319,12 @@ int Application::exec()
                 std::cout << "ILLEGAL arg : " << argv[0] << " . Type help for more info" << std::endl;
             }
         }
-
+        std::string oper;
+        if (isLogged())
+        {
+            std::cout << "[ ID : " << uname << " ]\n"
+                      << "[ Balance : " << trade->getbal(uname) << "]\n";
+        }
         std::cout << "> ";
     }
     return 0;
