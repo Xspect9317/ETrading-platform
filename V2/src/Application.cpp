@@ -20,9 +20,9 @@ int Application::exec()
     strMap["help"] = strValue::help;
     strMap["regis"] = strValue::regis;
     strMap["login"] = strValue::login;
-    // strMap["logout"]=strValue::logout;
-    // strMap["addcart"]=strValue::addcart;
-    // strMap["settle"]=strValue::settle;
+    strMap["logout"] = strValue::logout;
+    strMap["addcart"] = strValue::addcart;
+    strMap["settle"] = strValue::settle;
     strMap["recharge"] = strValue::recharge;
     strMap["ls"] = strValue::ls;
     strMap["lsall"] = strValue::lsall;
@@ -52,9 +52,9 @@ int Application::exec()
                               << "regis <name> <password> <0/1> : register a user\n"
                               << "login <name> <password> : login as a user\n"
                               << "logout : logout\n"
-                              //   << "addcart <commdity name> : add a commdity into cart\n"
-                              //   << "settle : settle\n"
-                              //   << "recharge <number> : recharge\n"
+                              << "addcart <commdity name> <number>: add a commdity into cart\n"
+                              << "settle : settle\n"
+                              << "recharge <number> : recharge\n"
                               << "ls <commdity name> [commdity type] : list commdity\n"
                               << "lsall : list all commdity\n"
                               << "lsu <username> : list a user info\n"
@@ -62,8 +62,58 @@ int Application::exec()
                               << "chquantity <commdity name> <number> : change quantity\n"
                               << "chpr <commdity name> <number> : change price\n"
                               << "chpercent <commdity name> <number> : change discount\n"
-                              << "chtpercent <type> <number>\nhelp"
+                              << "chtpercent <type> <number>\n"
                               << "quit : quit\n";
+                    break;
+
+                case addcart:
+                    if (argv.size() < 3)
+                    {
+                        std::cout << "INVALID format\n";
+                        break;
+                    }
+                    else
+                    {
+                        std::istringstream iss(argv[2]);
+                        int num;
+                        iss >> num;
+                        if (trade->haveComm(argv[1]))
+                        {
+                            if (!trade->addCart(uname, argv[1], num))
+                            {
+                                std::cout << "Failed\n";
+                            }
+                        }
+                        else
+                        {
+                            std::cout << argv[1] << " NOT found\n";
+                        }
+                    }
+                    break;
+
+                case settle:
+                    if (!trade->buy(uname))
+                    {
+                        std::cout << "Failed\n";
+                    }
+                    break;
+
+                case recharge:
+                    if (argv.size() < 2)
+                    {
+                        std::cout << "Failed\n";
+                        break;
+                    }
+                    else
+                    {
+                        std::istringstream iss(argv[1]);
+                        double b;
+                        iss >> b;
+                        if (!trade->addbal(uname, b))
+                        {
+                            std::cout << "Failed\n";
+                        }
+                    }
                     break;
 
                 case regis:
