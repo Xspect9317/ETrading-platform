@@ -317,7 +317,9 @@ bool Trade::buy(const std::string &uname)
         if (uname.compare(uit->getName()) == 0 && uit->getUserType() == User::Type::consumer)
         {
             double sum = 0.0;
-            auto cart = dynamic_cast<Consumer *>(uit)->getCart();
+            Consumer *cuit = dynamic_cast<Consumer *>(uit);
+            auto cart = cuit->getCart();
+            dynamic_cast<Merchant *>(uit);
             for (auto cit : cart)
             {
                 double price = getPrice(cit.first);
@@ -405,7 +407,7 @@ bool Trade::addCart(const std::string &uname, const std::string &name, int q)
     {
         for (auto uit : userList)
         {
-            if (uname.compare(uit->getName()) && uit->getUserType() == User::Type::consumer)
+            if (uname.compare(uit->getName()) == 0 && uit->getUserType() == User::Type::consumer)
             {
                 auto it = dynamic_cast<Consumer *>(uit);
                 it->addCart(name, q);
