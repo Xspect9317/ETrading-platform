@@ -2,10 +2,15 @@
 #include <fstream>
 #include "Trade.h"
 
-bool Trade::readUserFile(const std::string &fp = "userdata.txt")
+bool Trade::readUserFile(const std::string &fp)
 {
     std::cout << "Reading user data file : " << fp << " ... ";
     std::ifstream f(fp, std::ios::in);
+    if (!f.good())
+    {
+        std::cout << fp << ": not exist\n";
+        return false;
+    }
     std::string tempname, temppassword;
     int temptype, tempbal;
     f >> tempname;
@@ -33,7 +38,7 @@ bool Trade::readUserFile(const std::string &fp = "userdata.txt")
     return true;
 }
 
-bool Trade::saveUserFile(const std::string &fp = "userdata.txt") const
+bool Trade::saveUserFile(const std::string &fp) const
 {
     std::cout << "Saving user data file : " << fp << " ... ";
     std::ofstream f(fp, std::ios::out);
@@ -41,6 +46,10 @@ bool Trade::saveUserFile(const std::string &fp = "userdata.txt") const
     {
         User::Type t = it->getUserType();
         int type;
+        if (it->getName().compare(adminName) == 0)
+        {
+            continue;
+        }
         switch (t)
         {
         case User::Type::consumer:
@@ -60,10 +69,15 @@ bool Trade::saveUserFile(const std::string &fp = "userdata.txt") const
     return true;
 }
 
-bool Trade::readCommFile(const std::string &fp = "commdata.txt")
+bool Trade::readCommFile(const std::string &fp)
 {
     std::cout << "Reading commdity data file : " << fp << " ... ";
     std::ifstream f(fp, std::ios::in);
+    if (!f.good())
+    {
+        std::cout << fp << ": not exist\n";
+        return false;
+    }
     std::string tempname, temptype, tempowner;
     double tempprice, temppercent;
     int quantity;
@@ -80,7 +94,7 @@ bool Trade::readCommFile(const std::string &fp = "commdata.txt")
     return true;
 }
 
-bool Trade::saveCommFile(const std::string &fp = "commdata.txt") const
+bool Trade::saveCommFile(const std::string &fp) const
 {
     std::cout << "Saving commdity data file : " << fp << " ... ";
     std::ofstream f(fp, std::ios::out);
@@ -201,11 +215,11 @@ void Trade::listComm() const
     }
 }
 
-void Trade::listComm(const std::string &name, const std::string &comType = "*", const std::string &uname = "") const
+void Trade::listComm(const std::string &name, const std::string &comType, const std::string &uname) const
 {
     for (const auto &it : commList)
     {
-        if ((name == "*" || it.getName().find(name) != -1) && (comType == "*" || comType.compare(it.getComType()) == 0) && (uname == "" || uname.compare(it.getOwner()) == 0))
+        if ((name == "*" || it.getName().find(name) != std::string::npos) && (comType == "*" || comType.compare(it.getComType()) == 0) && (uname == "" || uname.compare(it.getOwner()) == 0))
         {
             std::cout << "Name : " << it.getName() << " "
                       << "Price : " << it.getPrice() << " "
@@ -243,7 +257,7 @@ bool Trade::changeQuantity(const std::string &name, const std::string &uname, in
 {
     for (auto it = commList.begin(); it != commList.end(); it++)
     {
-        if (name.compare(it->getName()) == 0)
+        if (name.compare(it->getName()) == 0 && (uname == adminName || uname.compare(it->getOwner()) == 0))
         {
             it->setQuantity(q);
             return true;
@@ -269,13 +283,25 @@ bool Trade::setPercent(const std::string &name, const std::string &uname, double
 {
     for (auto it = commList.begin(); it != commList.end(); it++)
     {
-        if (name.compare(it->getName()) == 0 && uname.compare(it->getOwner()) == 0)
+        if (name.compare(it->getName()) == 0 && (uname.compare(it->getOwner()) == 0 || uname == adminName))
         {
             it->setPercent(p);
             return true;
         }
     }
     return false;
+}
+
+bool Trade::setPercent(double p, const std::string &type, const std::string &uname)
+{
+    for (auto it = commList.begin(); it != commList.end(); it++)
+    {
+        if (type.compare(it->getComType()) == 0 && (uname.compare(it->getOwner()) == 0 || uname == adminName))
+        {
+            it->setPercent(p);
+        }
+    }
+    return true;
 }
 
 bool Trade::buy(const std::string &uname)
@@ -289,7 +315,7 @@ bool Trade::buy(const std::string &uname)
             for (auto cit : cart)
             {
                 double price = getPrice(cit.first);
-                if (price = -1 && cit.second <= getQuantity(cit.first))
+                if (price == -1 && cit.second <= getQuantity(cit.first))
                 {
                     return false;
                 }
@@ -300,7 +326,7 @@ bool Trade::buy(const std::string &uname)
             {
                 for (auto cit : cart)
                 {
-                    double price = getPrice(cit.first);
+                    // double price = getPrice(cit.first);
                     changeQuantity(cit.first, uit->getName(), getQuantity(cit.first) + cit.second);
                 }
                 return false;
