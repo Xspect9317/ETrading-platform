@@ -36,7 +36,7 @@ int Application::exec()
     std::string oper;
     std::cout << "> ";
     // while (std::cin >> oper)
-    while(std::getline(std::cin,oper))
+    while (std::getline(std::cin, oper))
     {
         auto argv = splitStr(oper);
         if (argv.size() > 0)
@@ -119,6 +119,11 @@ int Application::exec()
 
                 case addcomm:
                 {
+                    if (!isLogged())
+                    {
+                        std::cout << "NOT Logged\n";
+                        break;
+                    }
                     if (argv.size() < 4)
                     {
                         std::cout << "INVALID Format\n";
@@ -136,6 +141,11 @@ int Application::exec()
 
                 case chquantity:
                 {
+                    if (!isLogged())
+                    {
+                        std::cout << "NOT Logged\n";
+                        break;
+                    }
                     if (argv.size() < 3)
                     {
                         std::cout << "INVALID Format\n";
@@ -153,6 +163,11 @@ int Application::exec()
 
                 case chpr:
                 {
+                    if (!isLogged())
+                    {
+                        std::cout << "NOT Logged\n";
+                        break;
+                    }
                     if (argv.size() < 3)
                     {
                         std::cout << "INVALID Format\n";
@@ -170,6 +185,11 @@ int Application::exec()
 
                 case chpercent:
                 {
+                    if (!isLogged())
+                    {
+                        std::cout << "NOT Logged\n";
+                        break;
+                    }
                     if (argv.size() < 3)
                     {
                         std::cout << "INVALID Format\n";
@@ -187,6 +207,12 @@ int Application::exec()
 
                 case chtpercent:
                 {
+                    if (!isLogged())
+                    {
+                        std::cout << "NOT Logged\n";
+                        break;
+                    }
+                    
                     if (argv.size() < 3)
                     {
                         std::cout << "INVALID Format\n";
