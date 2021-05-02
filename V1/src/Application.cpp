@@ -8,6 +8,8 @@
 Application::Application(const std::string &un, const std::string &pwd) : uname(un), password(pwd), logged(false)
 {
     trade = new Trade;
+    trade->readCommFile();
+    trade->readUserFile();
     logged = false;
 }
 
@@ -28,11 +30,13 @@ int Application::exec()
     strMap["chquantity"] = strValue::chquantity;
     strMap["chpr"] = strValue::chpr;
     strMap["chpercent"] = strValue::chpercent;
+    strMap["chtpercent"] = strValue::chtpercent;
     strMap["quit"] = strValue::quit;
 
     std::string oper;
     std::cout << "> ";
-    while (std::cin >> oper)
+    // while (std::cin >> oper)
+    while(std::getline(std::cin,oper))
     {
         auto argv = splitStr(oper);
         if (argv.size() > 0)
@@ -44,7 +48,7 @@ int Application::exec()
                 {
                 case help:
                     std::cout << "help : help info\n"
-                              << "regis <name> <password> : register a user\n"
+                              << "regis <name> <password> <0/1> : register a user\n"
                               << "login <name> <password> : login as a user\n"
                               << "logout : logout\n"
                               //   << "addcart <commdity name> : add a commdity into cart\n"
@@ -58,13 +62,18 @@ int Application::exec()
                               << "chpercent <commdity name> <number> : change discount\n"
                               << "quit : quit\n";
                     break;
+
                 case regis:
-                    if (argv.size() < 3)
+                {
+                    if (argv.size() < 4)
                     {
                         std::cout << "INVALID Format\n";
-                        continue;
+                        break;
                     }
-                    if (trade->addUser(argv[1], argv[2]))
+                    std::istringstream iss(argv[3]);
+                    int t;
+                    iss >> t;
+                    if (trade->addUser(argv[1], argv[2], t))
                     {
                         std::cout << "User [ " << argv[1] << " ] added\n"
                                   << "Please login again\n";
@@ -73,12 +82,14 @@ int Application::exec()
                     {
                         std::cout << "Failed\n";
                     }
-                    break;
+                }
+                break;
+
                 case login:
                     if (argv.size() < 3)
                     {
                         std::cout << "INVALID Format\n";
-                        continue;
+                        break;
                     }
                     if (trade->checkPassword(argv[1], argv[2]))
                     {
@@ -92,22 +103,26 @@ int Application::exec()
                         std::cout << "Failed\n";
                     }
                     break;
+
                 case ls:
                     if (argv.size() < 3)
                     {
                         std::cout << "INVALID Format\n";
-                        continue;
+                        break;
                     }
                     trade->listComm(argv[1], argv[2]);
                     break;
+
                 case lsall:
                     trade->listComm("*", "*");
                     break;
+
                 case addcomm:
+                {
                     if (argv.size() < 4)
                     {
                         std::cout << "INVALID Format\n";
-                        continue;
+                        break;
                     }
                     std::istringstream iss(argv[3]);
                     double p;
@@ -116,9 +131,86 @@ int Application::exec()
                     {
                         std::cout << "Failed\n";
                     }
-                    break;
+                }
+                break;
+
                 case chquantity:
-                    // Todo
+                {
+                    if (argv.size() < 3)
+                    {
+                        std::cout << "INVALID Format\n";
+                        break;
+                    }
+                    std::istringstream iss(argv[2]);
+                    int q;
+                    iss >> q;
+                    if (!trade->changeQuantity(argv[1], uname, q))
+                    {
+                        std::cout << "Failed\n";
+                    }
+                }
+                break;
+
+                case chpr:
+                {
+                    if (argv.size() < 3)
+                    {
+                        std::cout << "INVALID Format\n";
+                        break;
+                    }
+                    std::istringstream iss(argv[2]);
+                    double p;
+                    iss >> p;
+                    if (!trade->setPrice(argv[1], uname, p))
+                    {
+                        std::cout << "Failed\n";
+                    }
+                }
+                break;
+
+                case chpercent:
+                {
+                    if (argv.size() < 3)
+                    {
+                        std::cout << "INVALID Format\n";
+                        break;
+                    }
+                    std::istringstream iss(argv[2]);
+                    double p;
+                    iss >> p;
+                    if (!trade->setPercent(argv[1], uname, p))
+                    {
+                        std::cout << "Failed\n";
+                    }
+                }
+                break;
+
+                case chtpercent:
+                {
+                    if (argv.size() < 3)
+                    {
+                        std::cout << "INVALID Format\n";
+                        break;
+                    }
+                    std::istringstream iss(argv[2]);
+                    double p;
+                    iss >> p;
+                    if (!trade->setPercent(p, argv[1], uname))
+                    {
+                        std::cout << "Failed\n";
+                    }
+                }
+                break;
+
+                case quit:
+                    trade->saveCommFile();
+                    trade->saveUserFile();
+                    std::cout << "Quit.\n";
+                    return 0;
+                    break;
+
+                default:
+                    std::cout << "ILLEGAL arg : " << argv[0] << " . Type help for more info" << std::endl;
                     break;
                 }
             }
@@ -130,9 +222,10 @@ int Application::exec()
 
         std::cout << "> ";
     }
+    return 0;
 }
 
-std::vector<std::string> Application::splitStr(const std::string &str, const char split = ' ')
+std::vector<std::string> Application::splitStr(const std::string &str, const char split)
 {
     std::vector<std::string> ret;
     std::istringstream iss(str);

@@ -41,9 +41,9 @@ public:
     bool addUser(const std::string &username, const std::string &password, int type);
     bool delUser(const std::string &username);
     bool getUserInfo(const std::string &username) const;
-    double getbal(const std::string& uname) const;
-    bool setbal(const std::string& uname,double b);
-    bool addbal(const std::string& uname,double b);
+    double getbal(const std::string &uname) const;
+    bool setbal(const std::string &uname, double b);
+    bool addbal(const std::string &uname, double b);
 
     // 商品管理
     bool haveComm(const std::string &name) const;
@@ -56,6 +56,7 @@ public:
     bool setPrice(const std::string &name, const std::string &uname, double p);
     double getPrice(const std::string &name) const;
     bool setPercent(const std::string &name, const std::string &uname, double p);
+    bool setPercent(double p, const std::string &type, const std::string &uname);
 
     // 购物
     bool buy(const std::string &uname);

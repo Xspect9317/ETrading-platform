@@ -20,10 +20,8 @@ private:
     std::string password;
     // int token; // 远程服务器使用，防止每个报文中都有用户名与密码
 
-    Trade* trade;
+    Trade *trade;
     bool logged;
-
-    
 
 public:
     enum strValue
@@ -41,6 +39,7 @@ public:
         chquantity,
         chpr,
         chpercent,
+        chtpercent,
         quit
     };
 
@@ -54,9 +53,9 @@ public:
 
     int exec();
 
-    static std::vector<std::string> splitStr(const std::string& str,const char split);
+    static std::vector<std::string> splitStr(const std::string &str, const char split = ' ');
 
-    Application(const std::string& un,const std::string& pwd);
+    Application(const std::string &un, const std::string &pwd);
 };
 
 #endif
