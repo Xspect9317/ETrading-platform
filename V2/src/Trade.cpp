@@ -342,6 +342,7 @@ bool Trade::buy(const std::string &uname)
             std::cout << "Buy : \n";
             for (auto cit : cart)
             {
+                addbal(getOwner(cit.first), cit.second * getPrice(cit.first));
                 std::cout << cit.first << " : " << cit.second << std::endl;
             }
             uit->setBalance(uit->getBalance() - sum);
@@ -477,4 +478,16 @@ bool Trade::addbal(const std::string &uname, double b)
         }
     }
     return false;
+}
+
+std::string Trade::getOwner(const std::string &name)
+{
+    for (auto cit : commList)
+    {
+        if (name.compare(cit.getName()) == 0)
+        {
+            return cit.getOwner();
+        }
+    }
+    return "";
 }

@@ -57,6 +57,7 @@ public:
     double getPrice(const std::string &name) const;
     bool setPercent(const std::string &name, const std::string &uname, double p);
     bool setPercent(double p, const std::string &type, const std::string &uname);
+    std::string getOwner(const std::string& name);
 
     // 购物
     bool buy(const std::string &uname);
