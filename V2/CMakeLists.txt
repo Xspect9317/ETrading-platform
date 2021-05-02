@@ -3,4 +3,4 @@ include_directories(./include/)
 
 add_executable(V2 ${SRC_LIST})
 
-target_compile_options(V1 PRIVATE -Wall -g -O0)
+target_compile_options(V2 PRIVATE -Wall -g -O0)
