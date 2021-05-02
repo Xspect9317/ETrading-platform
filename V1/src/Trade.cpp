@@ -202,7 +202,7 @@ bool Trade::getUserInfo(const std::string &username) const
             }
         }
     }
-    if(!ret)
+    if (!ret)
     {
         std::cout << "CANNOT find user : " << username << std::endl;
     }
@@ -215,7 +215,8 @@ void Trade::listComm() const
     {
         std::cout << "Name : " << it.getName() << " "
                   << "Price : " << it.getPrice() << " "
-                  << "Type : " << it.getComType() << std::endl;
+                  << "Type : " << it.getComType() << " "
+                  << "Quantity : " << it.getQuantity() << std::endl;
     }
 }
 
@@ -227,7 +228,8 @@ void Trade::listComm(const std::string &name, const std::string &comType, const 
         {
             std::cout << "Name : " << it.getName() << " "
                       << "Price : " << it.getPrice() << " "
-                      << "Type : " << it.getComType() << std::endl;
+                      << "Type : " << it.getComType() << " "
+                      << "Quantity : " << it.getQuantity() << std::endl;
         }
     }
 }

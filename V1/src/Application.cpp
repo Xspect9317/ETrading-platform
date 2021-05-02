@@ -62,6 +62,7 @@ int Application::exec()
                               << "chquantity <commdity name> <number> : change quantity\n"
                               << "chpr <commdity name> <number> : change price\n"
                               << "chpercent <commdity name> <number> : change discount\n"
+                              << "chtpercent <type> <number>\nhelp"
                               << "quit : quit\n";
                     break;
 
