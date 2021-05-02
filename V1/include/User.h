@@ -13,8 +13,6 @@
 #include <vector>
 #include <utility>
 
-#include "Trade.h"
-
 class User
 {
 private:
@@ -39,6 +37,7 @@ public:
     void setPassword(const std::string &pw) { password = pw; } // 设置密码
 
     User(const std::string &n, const std::string &pw, const double b); // 构造函数
+    virtual ~User() {}
 };
 
 class Consumer : public User
@@ -52,6 +51,7 @@ public:
     bool addCart(std::string comId, int num); // 加入购物车
 
     Consumer(const std::string &n, const std::string &pw, const double b);
+    virtual ~Consumer() {}
 };
 
 class Merchant : public User
@@ -61,6 +61,7 @@ public:
     virtual Type getUserType() override { return Type::merchant; }
 
     Merchant(const std::string &n, const std::string &pw, const double b);
+    virtual ~Merchant() {}
 };
 
 #endif
