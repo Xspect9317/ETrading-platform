@@ -11,16 +11,15 @@
 
 #include <string>
 
-#include "Trade.h"
+const int MAXBUF = 2048;
 
 class Application
 {
 private:
     std::string uname;
     std::string password;
-    // int token; // 远程服务器使用，防止每个报文中都有用户名与密码
+    char token; // 远程服务器使用，防止每个报文中都有用户名与密码
 
-    Trade *trade;
     bool logged;
 
 public:
@@ -52,7 +51,7 @@ public:
     std::string getPassword() { return password; }
     void setPassword(const std::string &pwd) { password = pwd; }
 
-    int exec();
+    int exec(const std::string &ip, const std::string &port);
 
     static std::vector<std::string> splitStr(const std::string &str, const char split = ' ');
 

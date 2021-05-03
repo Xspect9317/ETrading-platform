@@ -5,15 +5,19 @@
 #include <vector>
 #include <map>
 
+#include <sys/socket.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <string.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 Application::Application(const std::string &un, const std::string &pwd) : uname(un), password(pwd), logged(false)
 {
-    trade = new Trade;
-    trade->readCommFile();
-    trade->readUserFile();
     logged = false;
 }
 
-int Application::exec()
+int Application::exec(const std::string &ip, const std::string &port)
 {
     std::map<std::string, strValue> strMap;
 
@@ -37,8 +41,28 @@ int Application::exec()
     std::string oper;
     std::cout << "> ";
     // while (std::cin >> oper)
+
+    int clientFd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    sockaddr_in clientAddr;
+
+    clientAddr.sin_family = AF_INET;
+    clientAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    clientAddr.sin_port = htons(atoi(port.c_str()));
+
+    bind(clientFd, (sockaddr *)&clientAddr, sizeof(clientAddr));
+
+    sockaddr_in serverAddr;
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_port = htons(atoi(port.c_str()));
+    inet_aton(ip.c_str(), &serverAddr.sin_addr);
+
+    char *buffRecv = (char *)malloc(MAXBUF);
+
     while (std::getline(std::cin, oper))
     {
+
+        memset(buffRecv, 0, MAXBUF);
+
         auto argv = splitStr(oper);
         if (argv.size() > 0)
         {
@@ -74,42 +98,94 @@ int Application::exec()
                     }
                     else
                     {
+                        if (connect(clientFd, (sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
+                        {
+                            std::cout << "CANNOT connect server\n";
+                            return 0;
+                        }
                         std::istringstream iss(argv[2]);
                         int num;
                         iss >> num;
-                        if (trade->haveComm(argv[1]))
+
+                        std::string buff;
+                        std::ostringstream oss(buff);
+
+                        oss << static_cast<char>(addcart)
+                            << " " << token
+                            << " " << argv[1]
+                            << " " << num;
+
+                        write(clientFd, buff.c_str(), buff.size());
+
+                        int len = recv(clientFd, buffRecv, MAXBUF, 0);
+                        std::istringstream recs(buffRecv);
+                        char ret;
+                        recs >> ret;
+                        if (ret == 0)
                         {
-                            if (!trade->addCart(uname, argv[1], num))
-                            {
-                                std::cout << "Failed\n";
-                            }
+                            std::cout << "Failed\n";
                         }
-                        else
-                        {
-                            std::cout << argv[1] << " NOT found\n";
-                        }
+                        break;
                     }
                     break;
 
                 case settle:
-                    if (!trade->buy(uname))
+                {
+                    if (connect(clientFd, (sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
+                    {
+                        std::cout << "CANNOT connect server\n";
+                        return 0;
+                    }
+
+                    std::string buff;
+                    std::ostringstream oss(buff);
+                    oss << static_cast<char>(settle) << " " << token;
+                    write(clientFd, buff.c_str(), buff.size());
+
+                    int len = recv(clientFd, buffRecv, MAXBUF, 0);
+                    std::istringstream recs(buffRecv);
+                    char ret;
+                    recs >> ret;
+                    if (ret == 0)
                     {
                         std::cout << "Failed\n";
                     }
-                    break;
+                    else
+                    {
+                        for (int i = 2; i < len; i++)
+                        {
+                            std::cout << buffRecv[i];
+                        }
+                    }
+                }
+                break;
 
                 case recharge:
                     if (argv.size() < 2)
                     {
-                        std::cout << "Failed\n";
+                        std::cout << "INVALID Format\n";
                         break;
                     }
                     else
                     {
+                        if (connect(clientFd, (sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
+                        {
+                            std::cout << "CANNOT connect server\n";
+                            return 0;
+                        }
+
                         std::istringstream iss(argv[1]);
                         double b;
                         iss >> b;
-                        if (!trade->addbal(uname, b))
+
+                        std::string buff;
+                        std::ostringstream oss(buff);
+                        oss << static_cast<char>(recharge) << " " << token << " " << b;
+
+                        write(clientFd, buff.c_str(), buff.size());
+
+                        int len = recv(clientFd, buffRecv, MAXBUF, 0);
+                        if (buffRecv[0] == '0')
                         {
                             std::cout << "Failed\n";
                         }
@@ -123,10 +199,25 @@ int Application::exec()
                         std::cout << "INVALID Format\n";
                         break;
                     }
+
+                    if (connect(clientFd, (sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
+                    {
+                        std::cout << "CANNOT connect server\n";
+                        return 0;
+                    }
+
                     std::istringstream iss(argv[3]);
                     int t;
                     iss >> t;
-                    if (trade->addUser(argv[1], argv[2], t))
+
+                    std::string buff;
+                    std::ostringstream oss(buff);
+                    oss << static_cast<char>(regis) << " " << argv[1] << " " << argv[2] << " " << t;
+
+                    write(clientFd, buff.c_str(), buff.size());
+
+                    int len = recv(clientFd, buffRecv, MAXBUF, 0);
+                    if (buffRecv[0] == '0')
                     {
                         std::cout << "User [ " << argv[1] << " ] added\n"
                                   << "Please login again\n";
@@ -139,6 +230,7 @@ int Application::exec()
                 break;
 
                 case login:
+                {
                     if (argv.size() < 3)
                     {
                         std::cout << "INVALID Format\n";
@@ -149,35 +241,114 @@ int Application::exec()
                         std::cout << "Failed\n";
                         break;
                     }
-                    if (trade->checkPassword(argv[1], argv[2]))
+
+                    if (connect(clientFd, (sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
                     {
-                        uname = argv[1];
-                        password = argv[2];
-                        logged = true;
-                        std::cout << "Logged in\n";
+                        std::cout << "CANNOT connect server\n";
+                        return 0;
                     }
-                    else
+
+                    std::string buff;
+                    std::ostringstream oss(buff);
+                    oss << static_cast<char>(login)
+                        << " " << argv[1]
+                        << " " << argv[2];
+
+                    write(clientFd, buff.c_str(), buff.size());
+
+                    int len = recv(clientFd, buffRecv, MAXBUF, 0);
+
+                    if (buffRecv[0] == '0')
                     {
                         std::cout << "Failed\n";
                     }
-                    break;
+                    else
+                    {
+                        token = buffRecv[2];
+                    }
+                }
+                break;
 
                 case logout:
+                {
                     logged = false;
-                    break;
+
+                    if (connect(clientFd, (sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
+                    {
+                        std::cout << "CANNOT connect server\n";
+                        return 0;
+                    }
+
+                    std::string buff;
+                    std::ostringstream oss;
+
+                    oss << static_cast<char>(logout)
+                        << " " << token;
+
+                    write(clientFd, buff.c_str(), buff.size());
+                    recv(clientFd, buffRecv, MAXBUF, 0);
+                }
+                break;
 
                 case ls:
+                {
                     if (argv.size() < 3)
                     {
                         std::cout << "INVALID Format\n";
                         break;
                     }
-                    trade->listComm(argv[1], argv[2]);
-                    break;
+
+                    if (connect(clientFd, (sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
+                    {
+                        std::cout << "CANNOT connect server\n";
+                        return 0;
+                    }
+
+                    std::string buff;
+                    std::ostringstream oss;
+                    oss << static_cast<char>(ls)
+                        << " " << argv[1]
+                        << " " << argv[2];
+
+                    write(clientFd, buff.c_str(), buff.size());
+
+                    int len = recv(clientFd, buffRecv, MAXBUF, 0);
+                    for (int i = 0; i < len; i++)
+                    {
+                        std::cout << buffRecv;
+                    }
+                }
+                break;
 
                 case lsall:
-                    trade->listComm("*", "*");
-                    break;
+                {
+                    if (argv.size() < 3)
+                    {
+                        std::cout << "INVALID Format\n";
+                        break;
+                    }
+
+                    if (connect(clientFd, (sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
+                    {
+                        std::cout << "CANNOT connect server\n";
+                        return 0;
+                    }
+
+                    std::string buff;
+                    std::ostringstream oss;
+                    oss << static_cast<char>(ls)
+                        << " *"
+                        << " *";
+
+                    write(clientFd, buff.c_str(), buff.size());
+
+                    int len = recv(clientFd, buffRecv, MAXBUF, 0);
+                    for (int i = 0; i < len; i++)
+                    {
+                        std::cout << buffRecv;
+                    }
+                }
+                break;
 
                 case addcomm:
                 {
@@ -191,10 +362,30 @@ int Application::exec()
                         std::cout << "INVALID Format\n";
                         break;
                     }
+
+                    if (connect(clientFd, (sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
+                    {
+                        std::cout << "CANNOT connect server\n";
+                        return 0;
+                    }
+
                     std::istringstream iss(argv[3]);
                     double p;
                     iss >> p;
-                    if (!trade->addComm(argv[1], uname, argv[2], p))
+
+                    std::string buff;
+                    std::ostringstream oss(buff);
+
+                    oss << static_cast<char>(addcomm)
+                        << " " << argv[1]
+                        << " " << token
+                        << " " << argv[2]
+                        << " " << p;
+
+                    write(clientFd, buff.c_str(), buff.size());
+                    int len = recv(clientFd, buffRecv, MAXBUF, 0);
+
+                    if (buffRecv[0] == '0')
                     {
                         std::cout << "Failed\n";
                     }
@@ -213,10 +404,29 @@ int Application::exec()
                         std::cout << "INVALID Format\n";
                         break;
                     }
+
+                    if (connect(clientFd, (sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
+                    {
+                        std::cout << "CANNOT connect server\n";
+                        return 0;
+                    }
+
                     std::istringstream iss(argv[2]);
                     int q;
                     iss >> q;
-                    if (!trade->changeQuantity(argv[1], uname, q))
+
+                    std::string buff;
+                    std::ostringstream oss(buff);
+                    oss << static_cast<char>(chquantity)
+                        << " " << argv[1]
+                        << " " << token
+                        << " " << q;
+
+                    write(clientFd, buff.c_str(), buff.size());
+
+                    int len = recv(clientFd, buffRecv, MAXBUF, 0);
+
+                    if (buffRecv[0] == '0')
                     {
                         std::cout << "Failed\n";
                     }
@@ -238,7 +448,25 @@ int Application::exec()
                     std::istringstream iss(argv[2]);
                     double p;
                     iss >> p;
-                    if (!trade->setPrice(argv[1], uname, p))
+
+                    if (connect(clientFd, (sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
+                    {
+                        std::cout << "CANNOT connect server\n";
+                        return 0;
+                    }
+
+                    std::string buff;
+                    std::ostringstream oss;
+                    oss << static_cast<char>(chpr)
+                        << " " << argv[1]
+                        << " " << token
+                        << " " << p;
+
+                    write(clientFd, buff.c_str(), buff.size());
+
+                    int len = recv(clientFd, buffRecv, MAXBUF, 0);
+
+                    if (buffRecv[0] == '0')
                     {
                         std::cout << "Failed\n";
                     }
@@ -260,7 +488,31 @@ int Application::exec()
                     std::istringstream iss(argv[2]);
                     double p;
                     iss >> p;
+
+                    if (connect(clientFd, (sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
+                    {
+                        std::cout << "CANNOT connect server\n";
+                        return 0;
+                    }
+
+                    /*
                     if (!trade->setPercent(argv[1], uname, p))
+                    {
+                        std::cout << "Failed\n";
+                    }
+                    */
+
+                    std::string buff;
+                    std::ostringstream oss(buff);
+                    oss << static_cast<char>(chpercent)
+                        << " " << argv[1]
+                        << " " << token
+                        << " " << p;
+
+                    write(clientFd, buff.c_str(), buff.size());
+
+                    int len = recv(clientFd, buffRecv, MAXBUF, 0);
+                    if (buffRecv[0] == '0')
                     {
                         std::cout << "Failed\n";
                     }
@@ -283,7 +535,25 @@ int Application::exec()
                     std::istringstream iss(argv[2]);
                     double p;
                     iss >> p;
-                    if (!trade->setPercent(p, argv[1], uname))
+
+                    if (connect(clientFd, (sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
+                    {
+                        std::cout << "CANNOT connect server\n";
+                        return 0;
+                    }
+
+                    std::string buff;
+                    std::ostringstream oss(buff);
+
+                    oss << static_cast<char>(chtpercent)
+                        << " " << argv[1]
+                        << " " << token
+                        << " " << p;
+
+                    write(clientFd, buff.c_str(), buff.size());
+
+                    int len = recv(clientFd, buffRecv, MAXBUF, 0);
+                    if (buffRecv[0] == '0')
                     {
                         std::cout << "Failed\n";
                     }
@@ -291,23 +561,58 @@ int Application::exec()
                 break;
 
                 case lsu:
+                {
                     if (argv.size() < 2)
                     {
                         std::cout << "INVALID format\n";
                         break;
                     }
-                    if (!trade->getUserInfo(argv[1]))
+
+                    if (connect(clientFd, (sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
                     {
-                        std::cout << "Failed\n";
+                        std::cout << "CANNOT connect server\n";
+                        return 0;
                     }
-                    break;
+
+                    std::string buff;
+                    std::ostringstream oss(buff);
+                    oss << static_cast<char>(lsu)
+                        << " " << argv[1];
+
+                    write(clientFd, buff.c_str(), buff.size());
+
+                    int len = recv(clientFd, buffRecv, MAXBUF, 0);
+                    for (int i = 0; i < len; i++)
+                    {
+                        std::cout << buffRecv[i];
+                    }
+                }
+                break;
 
                 case quit:
-                    trade->saveCommFile();
-                    trade->saveUserFile();
+                {
+                    if (connect(clientFd, (sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
+                    {
+                        std::cout << "CANNOT connect server\n";
+                        return 0;
+                    }
+
+                    if (isLogged())
+                    {
+                        std::string buff;
+                        std::ostringstream oss;
+                        oss << static_cast<char>(quit)
+                            << " " << token;
+
+                        write(clientFd, buff.c_str(), buff.size());
+                        recv(clientFd, buffRecv, MAXBUF, 0);
+                    }
+
                     std::cout << "Quit.\n";
+                    close(clientFd);
                     return 0;
-                    break;
+                }
+                break;
 
                 default:
                     std::cout << "ILLEGAL arg : " << argv[0] << " . Type help for more info" << std::endl;
@@ -322,8 +627,7 @@ int Application::exec()
         std::string oper;
         if (isLogged())
         {
-            std::cout << "[ ID : " << uname << " ]\n"
-                      << "[ Balance : " << trade->getbal(uname) << "]\n";
+            std::cout << "[ ID : " << uname << " ]\n";
         }
         std::cout << "> ";
     }
