@@ -65,7 +65,7 @@ public:
     std::string getOwner(const std::string &name);
 
     // 购物
-    bool buy(const std::string &uname);
+    std::string buy(const std::string &uname);
     bool clearCart(const std::string &uname);
     bool addCart(const std::string &uname, const std::string &name, int q);
 

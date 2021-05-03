@@ -139,9 +139,10 @@ int Application::exec(const std::string &ip, const std::string &port)
                     write(clientFd, buffSend, MAXBUF);
 
                     int len = recv(clientFd, buffRecv, MAXBUF, 0);
-                    std::istringstream recs(buffRecv);
-                    char ret;
-                    recs >> ret;
+                    // std::istringstream recs(buffRecv);
+                    // char ret;
+                    // recs >> ret;
+                    /*
                     if (ret == '0')
                     {
                         std::cout << "Failed\n";
@@ -152,6 +153,12 @@ int Application::exec(const std::string &ip, const std::string &port)
                         {
                             std::cout << buffRecv[i];
                         }
+                    }
+                    */
+
+                    for (int i = 0; i < len; i++)
+                    {
+                        std::cout << buffRecv[i];
                     }
                 }
                 break;

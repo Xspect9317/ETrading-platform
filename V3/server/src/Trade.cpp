@@ -336,8 +336,11 @@ bool Trade::setPercent(double p, const std::string &type, const std::string &una
     return true;
 }
 
-bool Trade::buy(const std::string &uname)
+std::string Trade::buy(const std::string &uname)
 {
+    char buff[MAXBUF];
+    std::ostrstream oss(buff, MAXBUF);
+    std::string ret = "CANNOT buy\n";
     for (auto uit : userList)
     {
         if (uname.compare(uit->getName()) == 0 && uit->getUserType() == User::Type::consumer)
@@ -351,7 +354,7 @@ bool Trade::buy(const std::string &uname)
                 double price = getPrice(cit.first);
                 if (price == -1 && cit.second <= getQuantity(cit.first))
                 {
-                    return false;
+                    return ret;
                 }
                 changeQuantity(cit.first, uit->getName(), getQuantity(cit.first) - cit.second);
                 sum += price * cit.second;
@@ -363,20 +366,24 @@ bool Trade::buy(const std::string &uname)
                     // double price = getPrice(cit.first);
                     changeQuantity(cit.first, uit->getName(), getQuantity(cit.first) + cit.second);
                 }
-                return false;
+                return ret;
             }
-            std::cout << "Buy : \n";
+            // std::cout << "Buy : \n";
+            oss << "Buy : \n";
             for (auto cit : cart)
             {
                 addbal(getOwner(cit.first), cit.second * getPrice(cit.first));
-                std::cout << cit.first << " : " << cit.second << std::endl;
+                // std::cout << cit.first << " : " << cit.second << std::endl;
+                oss << cit.first << " : " << cit.second << std::endl;
             }
             uit->setBalance(uit->getBalance() - sum);
             clearCart(uit->getName());
-            return true;
+
+            ret = buff;
+            return ret;
         }
     }
-    return false;
+    return "CANNOT buy\n";
 }
 
 int Trade::getQuantity(const std::string &name) const
@@ -681,6 +688,7 @@ int Trade::exec(const std::string &port)
             iss >> t;
             token = atoi(t.c_str());
             name = tokenMap[token];
+            /*
             if (!buy(name))
             {
                 buffSend[0] = '0';
@@ -696,6 +704,12 @@ int Trade::exec(const std::string &port)
                 memcpy(buffSend + len, &b, sizeof(b));
                 len += sizeof(b);
                 break;
+            }
+            */
+            {
+                std::string ret = buy(name);
+                memcpy(buffSend, ret.c_str(), ret.size());
+                len = ret.size();
             }
             break;
 
