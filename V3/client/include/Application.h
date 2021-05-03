@@ -19,7 +19,7 @@ class Application
 private:
     std::string uname;
     std::string password;
-    char token; // 远程服务器使用，防止每个报文中都有用户名与密码
+    int token; // 远程服务器使用，防止每个报文中都有用户名与密码
 
     bool logged;
 

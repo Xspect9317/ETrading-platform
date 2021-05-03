@@ -70,7 +70,7 @@ public:
     bool addCart(const std::string &uname, const std::string &name, int q);
 
     int exec(const std::string &port);
-    char keyGen(const std::string &name);
+    int keyGen(const std::string &name);
 
     ~Trade();
     Trade();

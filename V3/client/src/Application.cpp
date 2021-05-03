@@ -4,6 +4,7 @@
 #include <sstream>
 #include <vector>
 #include <map>
+#include <strstream>
 
 #include <sys/socket.h>
 #include <unistd.h>
@@ -40,28 +41,22 @@ int Application::exec(const std::string &ip, const std::string &port)
 
     std::string oper;
     std::cout << "> ";
-    // while (std::cin >> oper)
-
-    int clientFd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    sockaddr_in clientAddr;
-
-    clientAddr.sin_family = AF_INET;
-    clientAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    clientAddr.sin_port = htons(atoi(port.c_str()));
-
-    bind(clientFd, (sockaddr *)&clientAddr, sizeof(clientAddr));
 
     sockaddr_in serverAddr;
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(atoi(port.c_str()));
     inet_aton(ip.c_str(), &serverAddr.sin_addr);
 
-    char *buffRecv = (char *)malloc(MAXBUF);
+    // char *buffRecv = (char *)malloc(MAXBUF);
+    // char *buffSend = (char *)malloc(MAXBUF);
+    char buffRecv[MAXBUF];
+    char buffSend[MAXBUF];
 
     while (std::getline(std::cin, oper))
     {
-
+        int clientFd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
         memset(buffRecv, 0, MAXBUF);
+        memset(buffSend, 0, MAXBUF);
 
         auto argv = splitStr(oper);
         if (argv.size() > 0)
@@ -107,21 +102,21 @@ int Application::exec(const std::string &ip, const std::string &port)
                         int num;
                         iss >> num;
 
-                        std::string buff;
-                        std::ostringstream oss(buff);
+                        // std::string buff;
+                        std::ostrstream oss(buffSend, MAXBUF);
 
                         oss << static_cast<char>(addcart)
                             << " " << token
                             << " " << argv[1]
                             << " " << num;
 
-                        write(clientFd, buff.c_str(), buff.size());
+                        write(clientFd, buffSend, MAXBUF);
 
-                        int len = recv(clientFd, buffRecv, MAXBUF, 0);
+                        recv(clientFd, buffRecv, MAXBUF, 0);
                         std::istringstream recs(buffRecv);
                         char ret;
                         recs >> ret;
-                        if (ret == 0)
+                        if (ret == '0')
                         {
                             std::cout << "Failed\n";
                         }
@@ -137,16 +132,17 @@ int Application::exec(const std::string &ip, const std::string &port)
                         return 0;
                     }
 
-                    std::string buff;
-                    std::ostringstream oss(buff);
-                    oss << static_cast<char>(settle) << " " << token;
-                    write(clientFd, buff.c_str(), buff.size());
+                    // std::string buff;
+                    std::ostrstream oss(buffSend, MAXBUF);
+                    oss << static_cast<char>(settle)
+                        << " " << token;
+                    write(clientFd, buffSend, MAXBUF);
 
                     int len = recv(clientFd, buffRecv, MAXBUF, 0);
                     std::istringstream recs(buffRecv);
                     char ret;
                     recs >> ret;
-                    if (ret == 0)
+                    if (ret == '0')
                     {
                         std::cout << "Failed\n";
                     }
@@ -178,13 +174,15 @@ int Application::exec(const std::string &ip, const std::string &port)
                         double b;
                         iss >> b;
 
-                        std::string buff;
-                        std::ostringstream oss(buff);
-                        oss << static_cast<char>(recharge) << " " << token << " " << b;
+                        // std::string buff;
+                        std::ostrstream oss(buffSend, MAXBUF);
+                        oss << static_cast<char>(recharge)
+                            << " " << token
+                            << " " << b;
 
-                        write(clientFd, buff.c_str(), buff.size());
+                        write(clientFd, buffSend, MAXBUF);
 
-                        int len = recv(clientFd, buffRecv, MAXBUF, 0);
+                        recv(clientFd, buffRecv, MAXBUF, 0);
                         if (buffRecv[0] == '0')
                         {
                             std::cout << "Failed\n";
@@ -210,13 +208,16 @@ int Application::exec(const std::string &ip, const std::string &port)
                     int t;
                     iss >> t;
 
-                    std::string buff;
-                    std::ostringstream oss(buff);
-                    oss << static_cast<char>(regis) << " " << argv[1] << " " << argv[2] << " " << t;
+                    // std::string buff;
+                    std::ostrstream oss(buffSend, MAXBUF);
+                    oss << static_cast<char>(regis)
+                        << " " << argv[1]
+                        << " " << argv[2]
+                        << " " << t;
 
-                    write(clientFd, buff.c_str(), buff.size());
+                    write(clientFd, buffSend, MAXBUF);
 
-                    int len = recv(clientFd, buffRecv, MAXBUF, 0);
+                    recv(clientFd, buffRecv, MAXBUF, 0);
                     if (buffRecv[0] == '0')
                     {
                         std::cout << "User [ " << argv[1] << " ] added\n"
@@ -248,23 +249,28 @@ int Application::exec(const std::string &ip, const std::string &port)
                         return 0;
                     }
 
-                    std::string buff;
-                    std::ostringstream oss(buff);
+                    // std::string buff;
+                    std::ostrstream oss(buffSend, MAXBUF);
                     oss << static_cast<char>(login)
                         << " " << argv[1]
                         << " " << argv[2];
 
-                    write(clientFd, buff.c_str(), buff.size());
+                    write(clientFd, buffSend, MAXBUF);
 
-                    int len = recv(clientFd, buffRecv, MAXBUF, 0);
+                    recv(clientFd, buffRecv, MAXBUF, 0);
 
-                    if (buffRecv[0] == '0')
+                    if (buffRecv[0] != '1')
                     {
                         std::cout << "Failed\n";
                     }
                     else
                     {
-                        token = buffRecv[2];
+                        // token = buffRecv[2];
+                        std::istringstream iss(buffRecv + 2);
+                        iss >> token;
+                        uname = argv[1];
+                        password = argv[2];
+                        logged = true;
                     }
                 }
                 break;
@@ -279,14 +285,16 @@ int Application::exec(const std::string &ip, const std::string &port)
                         return 0;
                     }
 
-                    std::string buff;
-                    std::ostringstream oss;
+                    // std::string buff;
+                    std::ostrstream oss(buffSend, MAXBUF);
 
                     oss << static_cast<char>(logout)
                         << " " << token;
 
-                    write(clientFd, buff.c_str(), buff.size());
+                    write(clientFd, buffSend, MAXBUF);
                     recv(clientFd, buffRecv, MAXBUF, 0);
+
+                    logged = false;
                 }
                 break;
 
@@ -304,48 +312,42 @@ int Application::exec(const std::string &ip, const std::string &port)
                         return 0;
                     }
 
-                    std::string buff;
-                    std::ostringstream oss;
+                    // std::string buff;
+                    std::ostrstream oss(buffSend, MAXBUF);
                     oss << static_cast<char>(ls)
                         << " " << argv[1]
                         << " " << argv[2];
 
-                    write(clientFd, buff.c_str(), buff.size());
+                    write(clientFd, buffSend, MAXBUF);
 
                     int len = recv(clientFd, buffRecv, MAXBUF, 0);
                     for (int i = 0; i < len; i++)
                     {
-                        std::cout << buffRecv;
+                        std::cout << buffRecv[i];
                     }
                 }
                 break;
 
                 case lsall:
                 {
-                    if (argv.size() < 3)
-                    {
-                        std::cout << "INVALID Format\n";
-                        break;
-                    }
-
                     if (connect(clientFd, (sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
                     {
                         std::cout << "CANNOT connect server\n";
                         return 0;
                     }
 
-                    std::string buff;
-                    std::ostringstream oss;
+                    // std::string buff;
+                    std::ostrstream oss(buffSend, MAXBUF);
                     oss << static_cast<char>(ls)
                         << " *"
                         << " *";
 
-                    write(clientFd, buff.c_str(), buff.size());
+                    write(clientFd, buffSend, MAXBUF);
 
                     int len = recv(clientFd, buffRecv, MAXBUF, 0);
                     for (int i = 0; i < len; i++)
                     {
-                        std::cout << buffRecv;
+                        std::cout << buffRecv[i];
                     }
                 }
                 break;
@@ -373,8 +375,8 @@ int Application::exec(const std::string &ip, const std::string &port)
                     double p;
                     iss >> p;
 
-                    std::string buff;
-                    std::ostringstream oss(buff);
+                    // std::string buff;
+                    std::ostrstream oss(buffSend, MAXBUF);
 
                     oss << static_cast<char>(addcomm)
                         << " " << argv[1]
@@ -382,8 +384,8 @@ int Application::exec(const std::string &ip, const std::string &port)
                         << " " << argv[2]
                         << " " << p;
 
-                    write(clientFd, buff.c_str(), buff.size());
-                    int len = recv(clientFd, buffRecv, MAXBUF, 0);
+                    write(clientFd, buffSend, MAXBUF);
+                    recv(clientFd, buffRecv, MAXBUF, 0);
 
                     if (buffRecv[0] == '0')
                     {
@@ -415,16 +417,16 @@ int Application::exec(const std::string &ip, const std::string &port)
                     int q;
                     iss >> q;
 
-                    std::string buff;
-                    std::ostringstream oss(buff);
+                    // std::string buff;
+                    std::ostrstream oss(buffSend, MAXBUF);
                     oss << static_cast<char>(chquantity)
                         << " " << argv[1]
                         << " " << token
                         << " " << q;
 
-                    write(clientFd, buff.c_str(), buff.size());
+                    write(clientFd, buffSend, MAXBUF);
 
-                    int len = recv(clientFd, buffRecv, MAXBUF, 0);
+                    recv(clientFd, buffRecv, MAXBUF, 0);
 
                     if (buffRecv[0] == '0')
                     {
@@ -455,16 +457,16 @@ int Application::exec(const std::string &ip, const std::string &port)
                         return 0;
                     }
 
-                    std::string buff;
-                    std::ostringstream oss;
+                    // std::string buff;
+                    std::ostrstream oss(buffSend, MAXBUF);
                     oss << static_cast<char>(chpr)
                         << " " << argv[1]
                         << " " << token
                         << " " << p;
 
-                    write(clientFd, buff.c_str(), buff.size());
+                    write(clientFd, buffSend, MAXBUF);
 
-                    int len = recv(clientFd, buffRecv, MAXBUF, 0);
+                    recv(clientFd, buffRecv, MAXBUF, 0);
 
                     if (buffRecv[0] == '0')
                     {
@@ -495,23 +497,16 @@ int Application::exec(const std::string &ip, const std::string &port)
                         return 0;
                     }
 
-                    /*
-                    if (!trade->setPercent(argv[1], uname, p))
-                    {
-                        std::cout << "Failed\n";
-                    }
-                    */
-
-                    std::string buff;
-                    std::ostringstream oss(buff);
+                    // std::string buff;
+                    std::ostrstream oss(buffSend, MAXBUF);
                     oss << static_cast<char>(chpercent)
                         << " " << argv[1]
                         << " " << token
                         << " " << p;
 
-                    write(clientFd, buff.c_str(), buff.size());
+                    write(clientFd, buffSend, MAXBUF);
 
-                    int len = recv(clientFd, buffRecv, MAXBUF, 0);
+                    recv(clientFd, buffRecv, MAXBUF, 0);
                     if (buffRecv[0] == '0')
                     {
                         std::cout << "Failed\n";
@@ -542,17 +537,17 @@ int Application::exec(const std::string &ip, const std::string &port)
                         return 0;
                     }
 
-                    std::string buff;
-                    std::ostringstream oss(buff);
+                    // std::string buff;
+                    std::ostrstream oss(buffSend, MAXBUF);
 
                     oss << static_cast<char>(chtpercent)
                         << " " << argv[1]
                         << " " << token
                         << " " << p;
 
-                    write(clientFd, buff.c_str(), buff.size());
+                    write(clientFd, buffSend, MAXBUF);
 
-                    int len = recv(clientFd, buffRecv, MAXBUF, 0);
+                    recv(clientFd, buffRecv, MAXBUF, 0);
                     if (buffRecv[0] == '0')
                     {
                         std::cout << "Failed\n";
@@ -574,12 +569,12 @@ int Application::exec(const std::string &ip, const std::string &port)
                         return 0;
                     }
 
-                    std::string buff;
-                    std::ostringstream oss(buff);
+                    // std::string buff;
+                    std::ostrstream oss(buffSend, MAXBUF);
                     oss << static_cast<char>(lsu)
                         << " " << argv[1];
 
-                    write(clientFd, buff.c_str(), buff.size());
+                    write(clientFd, buffSend, MAXBUF);
 
                     int len = recv(clientFd, buffRecv, MAXBUF, 0);
                     for (int i = 0; i < len; i++)
@@ -599,12 +594,12 @@ int Application::exec(const std::string &ip, const std::string &port)
 
                     if (isLogged())
                     {
-                        std::string buff;
-                        std::ostringstream oss;
+                        // std::string buff;
+                        std::ostrstream oss(buffSend, MAXBUF);
                         oss << static_cast<char>(quit)
                             << " " << token;
 
-                        write(clientFd, buff.c_str(), buff.size());
+                        write(clientFd, buffSend, MAXBUF);
                         recv(clientFd, buffRecv, MAXBUF, 0);
                     }
 
@@ -630,6 +625,7 @@ int Application::exec(const std::string &ip, const std::string &port)
             std::cout << "[ ID : " << uname << " ]\n";
         }
         std::cout << "> ";
+        close(clientFd);
     }
     return 0;
 }

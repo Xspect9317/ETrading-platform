@@ -11,6 +11,7 @@
 #include <sys/socket.h>
 
 #include <sstream>
+#include <strstream>
 
 bool Trade::readUserFile(const std::string &fp)
 {
@@ -197,7 +198,9 @@ bool Trade::delUser(const std::string &username)
 std::string Trade::getUserInfo(const std::string &username) const
 {
     std::string ret;
-    std::ostringstream oss(ret);
+    char buff[MAXBUF];
+    memset(buff, 0, MAXBUF);
+    std::ostrstream oss(buff, MAXBUF);
     if (username == "*" || haveUser(username))
     {
         for (auto it : userList)
@@ -209,10 +212,10 @@ std::string Trade::getUserInfo(const std::string &username) const
                 oss << "User Info [ " << it->getName() << " ]" << std::endl;
                 oss << "Type : " << (int)it->getUserType() << std::endl;
                 oss << "Balance : " << it->getBalance() << std::endl;
-                ret = true;
             }
         }
     }
+    ret = buff;
     if (ret.size() == 0)
     {
         oss << "CANNOT find user : " << username << std::endl;
@@ -223,7 +226,9 @@ std::string Trade::getUserInfo(const std::string &username) const
 std::string Trade::listComm() const
 {
     std::string ret;
-    std::ostringstream oss(ret);
+    char buff[MAXBUF];
+    memset(buff, 0, MAXBUF);
+    std::ostrstream oss(buff, MAXBUF);
     for (const auto &it : commList)
     {
         oss << "Name : " << it.getName() << " "
@@ -231,13 +236,16 @@ std::string Trade::listComm() const
             << "Type : " << it.getComType() << " "
             << "Quantity : " << it.getQuantity() << std::endl;
     }
+    ret = buff;
     return ret;
 }
 
 std::string Trade::listComm(const std::string &name, const std::string &comType, const std::string &uname) const
 {
     std::string ret;
-    std::ostringstream oss(ret);
+    char buff[MAXBUF];
+    memset(buff, 0, MAXBUF);
+    std::ostrstream oss(buff, MAXBUF);
     for (const auto &it : commList)
     {
         if ((name == "*" || it.getName().find(name) != std::string::npos) && (comType == "*" || comType.compare(it.getComType()) == 0) && (uname == "" || uname.compare(it.getOwner()) == 0))
@@ -248,6 +256,7 @@ std::string Trade::listComm(const std::string &name, const std::string &comType,
                 << "Quantity : " << it.getQuantity() << std::endl;
         }
     }
+    ret = buff;
     return ret;
 }
 
@@ -512,7 +521,7 @@ std::string Trade::getOwner(const std::string &name)
     return "";
 }
 
-char Trade::keyGen(const std::string &name)
+int Trade::keyGen(const std::string &name)
 {
     int ret = -1;
     if (tokenMap.size() == MAXMAP)
@@ -522,10 +531,11 @@ char Trade::keyGen(const std::string &name)
     for (int i = 0; i < MAXMAP; i++)
     {
         auto it = tokenMap.find(i);
-        if (it != tokenMap.end())
+        if (it == tokenMap.end())
         {
             ret = i;
             tokenMap[i] = name;
+            break;
         }
     }
     return ret;
@@ -543,9 +553,11 @@ int Trade::exec(const std::string &port)
 
     listen(serverFd, 5);
 
-    char *buffRecv, *buffSend;
-    buffRecv = (char *)malloc(MAXBUF);
-    buffSend = (char *)malloc(MAXBUF);
+    // char *buffRecv, *buffSend;
+    // buffRecv = (char *)malloc(MAXBUF);
+    // buffSend = (char *)malloc(MAXBUF);
+    char buffRecv[MAXBUF];
+    char buffSend[MAXBUF];
     unsigned int len = 0;
 
     sockaddr_in clientAddr;
@@ -556,18 +568,27 @@ int Trade::exec(const std::string &port)
     {
         memset(buffRecv, 0, MAXBUF);
         memset(buffSend, 0, MAXBUF);
+        memset(&clientAddr, 0, sizeof(clientAddr));
         len = 0;
 
         clientFd = accept(serverFd, (sockaddr *)&clientAddr, (socklen_t *)&addrLen);
+
+        std::cout << "Accept a request\n";
+
         int ret = read(clientFd, buffRecv, MAXBUF);
 
-        std::istringstream iss(buffRecv);
+        std::cout << "len : " << ret << std::endl;
 
-        int oper;
-        iss >> oper;
+        std::istringstream iss(buffRecv + 2);
+
+        char oper;
+        // iss >> oper;
+        oper = buffRecv[0];
+
+        std::cout << "oper : " << oper << std::endl;
 
         std::string name, pwd, type, t, cname;
-        char token;
+        int token;
         int num;
         double mon;
 
@@ -605,9 +626,14 @@ int Trade::exec(const std::string &port)
                 if (token != -1)
                 {
                     buffSend[0] = '1';
-                    buffSend[1] = '0';
-                    buffSend[2] = token;
-                    len += 2;
+                    buffSend[1] = ' ';
+
+                    std::ostrstream oss(buffSend + 2, MAXBUF);
+
+                    // buffSend[2] = token;
+                    oss << token;
+
+                    len += MAXBUF;
                 }
                 else
                 {
@@ -623,13 +649,14 @@ int Trade::exec(const std::string &port)
             iss >> t;
             token = atoi(t.c_str());
             tokenMap.erase(token);
+            break;
 
         // addcart
         case 4:
             iss >> t >> cname >> num;
             token = atoi(t.c_str());
             name = tokenMap[token];
-            if (!haveComm(name))
+            if (!haveComm(cname))
             {
                 buffSend[0] = '0';
                 len++;
@@ -832,6 +859,8 @@ int Trade::exec(const std::string &port)
 
                 saveCommFile();
                 saveUserFile();
+
+                return 0;
 
                 break;
             }
