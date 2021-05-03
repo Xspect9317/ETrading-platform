@@ -41,7 +41,8 @@ public:
         chpr,
         chpercent,
         chtpercent,
-        quit
+        quit,
+        setpw
     };
 
     bool isLogged() { return logged; }

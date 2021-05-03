@@ -491,3 +491,16 @@ std::string Trade::getOwner(const std::string &name)
     }
     return "";
 }
+
+bool Trade::setPassword(const std::string &username, const std::string &password)
+{
+    for (auto uit : userList)
+    {
+        if (username == uit->getName())
+        {
+            uit->setPassword(password);
+            return true;
+        }
+    }
+    return false;
+}

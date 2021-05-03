@@ -38,6 +38,8 @@ int Application::exec(const std::string &ip, const std::string &port)
     strMap["chpercent"] = strValue::chpercent;
     strMap["chtpercent"] = strValue::chtpercent;
     strMap["quit"] = strValue::quit;
+    strMap["setpw"] = strValue::setpw;
+    strMap["clcart"] = strValue::clcart;
 
     std::string oper;
     std::cout << "> ";
@@ -613,6 +615,67 @@ int Application::exec(const std::string &ip, const std::string &port)
                     std::cout << "Quit.\n";
                     close(clientFd);
                     return 0;
+                }
+                break;
+
+                case setpw:
+                {
+                    if (!isLogged())
+                    {
+                        std::cout << "NOT Logged\n";
+                        break;
+                    }
+                    if (argv.size() < 2)
+                    {
+                        std::cout << "INVALID Format\n";
+                        break;
+                    }
+
+                    if (connect(clientFd, (sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
+                    {
+                        std::cout << "CANNOT connect server\n";
+                        return 0;
+                    }
+
+                    std::ostrstream oss(buffSend, MAXBUF);
+                    oss << static_cast<char>(setpw)
+                        << " " << token
+                        << " " << argv[1];
+
+                    write(clientFd, buffSend, MAXBUF);
+
+                    recv(clientFd, buffRecv, MAXBUF, 0);
+                    if (buffRecv[0] == '0')
+                    {
+                        std::cout << "Failed\n";
+                    }
+                }
+                break;
+
+                case clcart:
+                {
+                    if (!isLogged())
+                    {
+                        std::cout << "NOT Logged\n";
+                        break;
+                    }
+
+                    if (connect(clientFd, (sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
+                    {
+                        std::cout << "CANNOT connect server\n";
+                        return 0;
+                    }
+
+                    std::ostrstream oss(buffSend, MAXBUF);
+                    oss << static_cast<char>(clcart)
+                        << " " << token;
+                    write(clientFd, buffSend, MAXBUF);
+
+                    recv(clientFd, buffRecv, MAXBUF, 0);
+                    if (buffRecv[0] == '0')
+                    {
+                        std::cout << "Failed\n";
+                    }
                 }
                 break;
 

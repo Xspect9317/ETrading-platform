@@ -885,8 +885,59 @@ int Trade::exec(const std::string &port)
                 break;
             }
             break;
+
+        // setpw
+        case 16:
+            iss >> t >> cname;
+            token = atoi(t.c_str());
+            name = tokenMap[token];
+            if (!setPassword(name, cname))
+            {
+                buffSend[0] = '0';
+                len++;
+                break;
+            }
+            else
+            {
+                buffSend[0] = '1';
+                len++;
+                break;
+            }
+            break;
+
+        // clcart
+        case 17:
+            iss >> t;
+            token = atoi(t.c_str());
+            name = tokenMap[token];
+            if (!clearCart(name))
+            {
+                buffSend[0] = '0';
+                len++;
+                break;
+            }
+            else
+            {
+                buffSend[0] = '1';
+                len++;
+                break;
+            }
+            break;
         }
         send(clientFd, buffSend, len, 0);
         close(clientFd);
     }
+}
+
+bool Trade::setPassword(const std::string &username, const std::string &password)
+{
+    for (auto uit : userList)
+    {
+        if (username == uit->getName())
+        {
+            uit->setPassword(password);
+            return true;
+        }
+    }
+    return false;
 }

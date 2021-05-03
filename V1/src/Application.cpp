@@ -33,6 +33,7 @@ int Application::exec()
     strMap["chpercent"] = strValue::chpercent;
     strMap["chtpercent"] = strValue::chtpercent;
     strMap["quit"] = strValue::quit;
+    strMap["setpw"] = strValue::setpw;
 
     std::string oper;
     std::cout << "> ";
@@ -248,6 +249,18 @@ int Application::exec()
                     trade->saveUserFile();
                     std::cout << "Quit.\n";
                     return 0;
+                    break;
+
+                case setpw:
+                    if (argv.size() < 2)
+                    {
+                        std::cout << "INVALID format\n";
+                        break;
+                    }
+                    if (!trade->setPassword(uname, argv[1]))
+                    {
+                        std::cout << "Failed\n";
+                    }
                     break;
 
                 default:
