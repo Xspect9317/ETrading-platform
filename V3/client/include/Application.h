@@ -10,6 +10,7 @@
 */
 
 #include <string>
+#include <vector>
 
 const int MAXBUF = 2048;
 
