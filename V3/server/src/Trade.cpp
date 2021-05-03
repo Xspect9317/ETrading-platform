@@ -2,6 +2,16 @@
 #include <fstream>
 #include "Trade.h"
 
+#include <unistd.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+
+#include <sstream>
+
 bool Trade::readUserFile(const std::string &fp)
 {
     std::cout << "Reading user data file : " << fp << " ... ";
@@ -184,9 +194,10 @@ bool Trade::delUser(const std::string &username)
     return false;
 }
 
-bool Trade::getUserInfo(const std::string &username) const
+std::string Trade::getUserInfo(const std::string &username) const
 {
-    bool ret = false;
+    std::string ret;
+    std::ostringstream oss(ret);
     if (username == "*" || haveUser(username))
     {
         for (auto it : userList)
@@ -195,43 +206,49 @@ bool Trade::getUserInfo(const std::string &username) const
             {
                 // 输出用户信息
 
-                std::cout << "User Info [ " << it->getName() << " ]" << std::endl;
-                std::cout << "Type : " << (int)it->getUserType() << std::endl;
-                std::cout << "Balance : " << it->getBalance() << std::endl;
+                oss << "User Info [ " << it->getName() << " ]" << std::endl;
+                oss << "Type : " << (int)it->getUserType() << std::endl;
+                oss << "Balance : " << it->getBalance() << std::endl;
                 ret = true;
             }
         }
     }
-    if (!ret)
+    if (ret.size() == 0)
     {
-        std::cout << "CANNOT find user : " << username << std::endl;
+        oss << "CANNOT find user : " << username << std::endl;
     }
     return ret;
 }
 
-void Trade::listComm() const
+std::string Trade::listComm() const
 {
+    std::string ret;
+    std::ostringstream oss(ret);
     for (const auto &it : commList)
     {
-        std::cout << "Name : " << it.getName() << " "
-                  << "Price : " << it.getPrice() << " "
-                  << "Type : " << it.getComType() << " "
-                  << "Quantity : " << it.getQuantity() << std::endl;
+        oss << "Name : " << it.getName() << " "
+            << "Price : " << it.getPrice() << " "
+            << "Type : " << it.getComType() << " "
+            << "Quantity : " << it.getQuantity() << std::endl;
     }
+    return ret;
 }
 
-void Trade::listComm(const std::string &name, const std::string &comType, const std::string &uname) const
+std::string Trade::listComm(const std::string &name, const std::string &comType, const std::string &uname) const
 {
+    std::string ret;
+    std::ostringstream oss(ret);
     for (const auto &it : commList)
     {
         if ((name == "*" || it.getName().find(name) != std::string::npos) && (comType == "*" || comType.compare(it.getComType()) == 0) && (uname == "" || uname.compare(it.getOwner()) == 0))
         {
-            std::cout << "Name : " << it.getName() << " "
-                      << "Price : " << it.getPrice() << " "
-                      << "Type : " << it.getComType() << " "
-                      << "Quantity : " << it.getQuantity() << std::endl;
+            oss << "Name : " << it.getName() << " "
+                << "Price : " << it.getPrice() << " "
+                << "Type : " << it.getComType() << " "
+                << "Quantity : " << it.getQuantity() << std::endl;
         }
     }
+    return ret;
 }
 
 bool Trade::addComm(const std::string &name, const std::string &uname, const std::string &comType, double price)
@@ -430,6 +447,9 @@ Trade::Trade(const Trade &t)
 
 Trade::Trade()
 {
+    readCommFile();
+    readUserFile();
+
     Merchant *upt = new Merchant(adminName, adminPwd, 0);
     userList.push_back(upt);
 }
@@ -490,4 +510,340 @@ std::string Trade::getOwner(const std::string &name)
         }
     }
     return "";
+}
+
+char Trade::keyGen(const std::string &name)
+{
+    int ret = -1;
+    if (tokenMap.size() == MAXMAP)
+    {
+        return ret;
+    }
+    for (int i = 0; i < MAXMAP; i++)
+    {
+        auto it = tokenMap.find(i);
+        if (it != tokenMap.end())
+        {
+            ret = i;
+            tokenMap[i] = name;
+        }
+    }
+    return ret;
+}
+
+int Trade::exec(const std::string &port)
+{
+    int serverFd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    sockaddr_in myAddr;
+    myAddr.sin_family = AF_INET;
+    myAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    myAddr.sin_port = htons(atoi(port.c_str()));
+
+    bind(serverFd, (sockaddr *)&myAddr, sizeof(myAddr));
+
+    listen(serverFd, 5);
+
+    char *buffRecv, *buffSend;
+    buffRecv = (char *)malloc(MAXBUF);
+    buffSend = (char *)malloc(MAXBUF);
+    unsigned int len = 0;
+
+    sockaddr_in clientAddr;
+    int addrLen = sizeof(clientAddr);
+
+    int clientFd;
+    while (1)
+    {
+        memset(buffRecv, 0, MAXBUF);
+        memset(buffSend, 0, MAXBUF);
+        len = 0;
+
+        clientFd = accept(serverFd, (sockaddr *)&clientAddr, (socklen_t *)&addrLen);
+        int ret = read(clientFd, buffRecv, MAXBUF);
+
+        std::istringstream iss(buffRecv);
+
+        int oper;
+        iss >> oper;
+
+        std::string name, pwd, type, t, cname;
+        char token;
+        int num;
+        double mon;
+
+        switch (oper)
+        {
+        // regis
+        case 1:
+            iss >> name >> pwd >> type;
+            if (!addUser(name, pwd, atoi(type.c_str())))
+            {
+                buffSend[0] = '0';
+                len++;
+                break;
+            }
+            else
+            {
+                buffSend[0] = '1';
+                len++;
+                break;
+            }
+            break;
+
+        // login
+        case 2:
+            iss >> name >> pwd;
+            if (!checkPassword(name, pwd))
+            {
+                buffSend[0] = '0';
+                len++;
+                break;
+            }
+            else
+            {
+                token = keyGen(name);
+                if (token != -1)
+                {
+                    buffSend[0] = '1';
+                    buffSend[1] = '0';
+                    buffSend[2] = token;
+                    len += 2;
+                }
+                else
+                {
+                    buffSend[0] = '2';
+                    len++;
+                }
+                break;
+            }
+            break;
+
+        // logout
+        case 3:
+            iss >> t;
+            token = atoi(t.c_str());
+            tokenMap.erase(token);
+
+        // addcart
+        case 4:
+            iss >> t >> cname >> num;
+            token = atoi(t.c_str());
+            name = tokenMap[token];
+            if (!haveComm(name))
+            {
+                buffSend[0] = '0';
+                len++;
+                break;
+            }
+            if (!addCart(name, cname, num))
+            {
+                buffSend[0] = '0';
+                len++;
+                break;
+            }
+            else
+            {
+                buffSend[0] = '1';
+                len++;
+                break;
+            }
+            break;
+
+        // settle
+        case 5:
+            iss >> t;
+            token = atoi(t.c_str());
+            name = tokenMap[token];
+            if (!buy(name))
+            {
+                buffSend[0] = '0';
+                len++;
+                break;
+            }
+            else
+            {
+                buffSend[0] = '1';
+                buffSend[1] = ' ';
+                len += 2;
+                double b = getbal(name);
+                memcpy(buffSend + len, &b, sizeof(b));
+                len += sizeof(b);
+                break;
+            }
+            break;
+
+        // recharge
+        case 6:
+            iss >> t >> mon;
+            token = atoi(t.c_str());
+            name = tokenMap[token];
+            if (!addbal(name, mon))
+            {
+                buffSend[0] = '0';
+                len++;
+                break;
+            }
+            else
+            {
+                buffSend[0] = '1';
+                buffSend[1] = ' ';
+                len += 2;
+                double b = getbal(name);
+                memcpy(buffSend + len, &b, sizeof(b));
+                len += sizeof(b);
+                break;
+            }
+            break;
+
+        // ls
+        case 7:
+            iss >> cname >> type;
+            {
+                std::string ret = listComm(cname, type);
+                memcpy(buffSend, ret.c_str(), ret.size());
+                len += ret.size();
+            }
+            break;
+
+        // lsall
+        case 8:
+            // use wildcard
+            {
+                std::string ret = listComm("*", "*");
+                memcpy(buffSend, ret.c_str(), ret.size());
+                len += ret.size();
+            }
+            break;
+
+        // lsu
+        case 9:
+            iss >> name;
+            {
+                std::string ret = getUserInfo(name);
+                memcpy(buffSend, ret.c_str(), ret.size());
+                len += ret.size();
+            }
+            break;
+
+        // addcomm
+        case 10:
+            iss >> cname >> t >> type >> mon;
+            token = atoi(t.c_str());
+            name = tokenMap[token];
+            if (!addComm(cname, name, type, mon))
+            {
+                buffSend[0] = '0';
+                len++;
+                break;
+            }
+            else
+            {
+                buffSend[0] = '1';
+                len++;
+                break;
+            }
+            break;
+
+        // chquantity
+        case 11:
+            iss >> cname >> t >> num;
+            token = atoi(t.c_str());
+            name = tokenMap[token];
+            if (!changeQuantity(cname, name, num))
+            {
+                buffSend[0] = '0';
+                len++;
+                break;
+            }
+            else
+            {
+                buffSend[0] = '1';
+                len++;
+                break;
+            }
+            break;
+
+        // chpr
+        case 12:
+            iss >> cname >> t >> mon;
+            token = atoi(t.c_str());
+            name = tokenMap[token];
+            if (!setPrice(cname, name, mon))
+            {
+                buffSend[0] = '0';
+                len++;
+                break;
+            }
+            else
+            {
+                buffSend[0] = '1';
+                len++;
+                break;
+            }
+            break;
+
+        // chpercent
+        case 13:
+            iss >> cname >> t >> mon;
+            token = atoi(t.c_str());
+            name = tokenMap[token];
+            if (!setPercent(cname, name, mon))
+            {
+                buffSend[0] = '0';
+                len++;
+                break;
+            }
+            else
+            {
+                buffSend[0] = '1';
+                len++;
+                break;
+            }
+            break;
+
+        // chtpercent
+        case 14:
+            iss >> type >> t >> mon;
+            token = atoi(t.c_str());
+            name = tokenMap[token];
+            if (!setPercent(mon, type, name))
+            {
+                buffSend[0] = '0';
+                len++;
+                break;
+            }
+            else
+            {
+                buffSend[0] = '1';
+                len++;
+                break;
+            }
+            break;
+
+        // quit
+        case 15:
+            iss >> t;
+            token = atoi(t.c_str());
+            name = tokenMap[token];
+            if (name == adminName)
+            {
+                buffSend[0] = '1';
+                len++;
+
+                saveCommFile();
+                saveUserFile();
+
+                break;
+            }
+            else
+            {
+                buffSend[0] = '0';
+                len++;
+                break;
+            }
+            break;
+        }
+        send(clientFd, buffSend, len, 0);
+        close(clientFd);
+    }
 }

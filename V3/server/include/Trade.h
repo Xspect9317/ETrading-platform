@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <map>
 
 #include "User.h"
 #include "Commidity.h"
@@ -22,12 +23,16 @@
 const std::string adminName = "admin";
 const std::string adminPwd = "123456";
 
+const int MAXBUF = 2048;
+const int MAXMAP = 128;
+
 class Trade
 {
 private:
     std::vector<User *> userList;
     std::vector<Commdity> commList;
     Trade(const Trade &t);
+    std::map<int, std::string> tokenMap;
 
 public:
     bool readUserFile(const std::string &fp = "userdata.txt");
@@ -40,15 +45,15 @@ public:
     bool checkPassword(const std::string &username, const std::string &password) const;
     bool addUser(const std::string &username, const std::string &password, int type);
     bool delUser(const std::string &username);
-    bool getUserInfo(const std::string &username) const;
+    std::string getUserInfo(const std::string &username) const;
     double getbal(const std::string &uname) const;
     bool setbal(const std::string &uname, double b);
     bool addbal(const std::string &uname, double b);
 
     // 商品管理
     bool haveComm(const std::string &name) const;
-    void listComm() const;
-    void listComm(const std::string &name, const std::string &comType = "*", const std::string &uname = "") const;
+    std::string listComm() const;
+    std::string listComm(const std::string &name, const std::string &comType = "*", const std::string &uname = "") const;
     bool addComm(const std::string &name, const std::string &uname, const std::string &comType, double price);
     bool delComm(const std::string &name, const std::string &uname);
     bool changeQuantity(const std::string &name, const std::string &uname, int q);
@@ -57,12 +62,15 @@ public:
     double getPrice(const std::string &name) const;
     bool setPercent(const std::string &name, const std::string &uname, double p);
     bool setPercent(double p, const std::string &type, const std::string &uname);
-    std::string getOwner(const std::string& name);
+    std::string getOwner(const std::string &name);
 
     // 购物
     bool buy(const std::string &uname);
     bool clearCart(const std::string &uname);
     bool addCart(const std::string &uname, const std::string &name, int q);
+
+    int exec(const std::string &port);
+    char keyGen(const std::string &name);
 
     ~Trade();
     Trade();
